@@ -18,11 +18,15 @@ struct CreateTodoRequest {
     completed: bool,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct UpdateTodoRequest {
+    completed: bool,
+}
+
 async fn create_connection_pool(database_url: &str) -> tokio_postgres::Client {
-    let (client, connection) =
-        tokio_postgres::connect(database_url, NoTls)
-            .await
-            .expect("Failed to create connection");
+    let (client, connection) = tokio_postgres::connect(database_url, NoTls)
+        .await
+        .expect("Failed to create connection");
 
     tokio::spawn(async move {
         if let Err(e) = connection.await {
@@ -82,17 +86,22 @@ async fn create_todo(
 async fn update_todo(
     client: web::Data<tokio_postgres::Client>,
     id: web::Path<i32>,
-    todo: web::Json<Todo>,
+    todo: web::Json<UpdateTodoRequest>,
 ) -> HttpResponse {
+    println!("Updating todo: id={}, completed={}", id, todo.completed); // デバッグ用
+
     match client
         .execute(
-            "UPDATE todos SET title = $1, completed = $2 WHERE id = $3",
-            &[&todo.title, &todo.completed, &id.into_inner()],
+            "UPDATE todos SET completed = $1 WHERE id = $2",
+            &[&todo.completed, &id.into_inner()],
         )
         .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
-        Err(_) => HttpResponse::InternalServerError().finish(),
+        Err(e) => {
+            eprintln!("Database error: {}", e);
+            HttpResponse::InternalServerError().json(format!("Error: {}", e))
+        }
     }
 }
 
@@ -112,7 +121,7 @@ async fn delete_todo(
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    
+
     let client = create_connection_pool(&database_url).await;
     let client_data = web::Data::new(client);
 

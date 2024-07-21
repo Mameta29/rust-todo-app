@@ -71,6 +71,13 @@ async function toggleTodo(id, completed) {
     });
     if (response.ok) {
       fetchTodos();
+    } else {
+      const errorText = await response.text();
+      console.error(
+        'Server responded with an error:',
+        response.status,
+        errorText
+      );
     }
   } catch (error) {
     console.error('Error toggling todo:', error);
