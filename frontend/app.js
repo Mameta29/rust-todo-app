@@ -18,22 +18,21 @@ async function fetchTodos() {
 
 // Todoの表示
 function displayTodos(todos) {
-  todoList.innerHTML = '';
-  todos.forEach((todo) => {
-    const li = document.createElement('li');
-    li.innerHTML = `
-            <span class="${todo.completed ? 'completed' : ''}">${
-      todo.title
-    }</span>
-            <div>
-                <button onclick="toggleTodo(${todo.id}, ${!todo.completed})">
-                    ${todo.completed ? '未完了' : '完了'}
-                </button>
-                <button onclick="deleteTodo(${todo.id})">削除</button>
-            </div>
-        `;
-    todoList.appendChild(li);
-  });
+  todoList.innerHTML = todos
+    .map(
+      (todo) => `
+    <li>
+      <span class="${todo.completed ? 'completed' : ''}">${todo.title}</span>
+      <div>
+        <button onclick="toggleTodo(${todo.id}, ${!todo.completed})">
+          ${todo.completed ? '未完了' : '完了'}
+        </button>
+        <button onclick="deleteTodo(${todo.id})">削除</button>
+      </div>
+    </li>
+  `
+    )
+    .join('');
 }
 
 // 新しいTodoの追加
